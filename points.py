@@ -124,7 +124,7 @@ def process_period(conn, substrate, keypair, point_info, start_period, end_perio
     round_info, active_nodes = get_round_info_for_period(conn, start_period, end_period)
 
     # Calculate points for the retrieved round information
-    wallet_points = round_point_computation(point_info, round_info, active_nodes)
+    wallet_points, raw_points = round_point_computation(point_info, round_info, active_nodes)
 
     # Define Lists
     positive = []
@@ -143,6 +143,9 @@ def process_period(conn, substrate, keypair, point_info, start_period, end_perio
     if len(negative) > 0:
         push_point_info(substrate, negative_points_func, keypair, negative)
 
+    with open("/cmix/raw_points.log", "a") as f:
+        f.write(f"[{datetime.datetime.now()}] {raw_points}")
+
     # Save end_period timestamp to database to lock in the operation
     update_last_checked_timestamp(conn, end_period)
 
@@ -153,7 +156,7 @@ def round_point_computation(point_info, round_info, active_nodes):
     :param round_info:
     :param active_nodes:
     :param point_info: point_info dictionary polled from consensus
-    :return:
+    :return: wallet_points, raw_points dicts
     """
     bin_multipliers = point_info['multipliers']
     success_points = point_info['success_points']
@@ -161,6 +164,7 @@ def round_point_computation(point_info, round_info, active_nodes):
     country_bins = point_info['countries']
 
     wallet_points = {}  # dictionary of wallet -> points to pass to push_point_info
+    raw_points = {} # Dict of raw points (without multipliers) to print to a log file
     node_multipliers = {}  # Dictionary containing point multipliers for each node
     node_wallets = {}  # Dictionary parsed from active nodes to more efficiently associate ID with Wallet ID
 
@@ -184,6 +188,7 @@ def round_point_computation(point_info, round_info, active_nodes):
         topology = row[6]
 
         points = 0
+        raw_points = 0
         if round_err:
             # Determine negative points for failures
             round_id = row[0]
@@ -192,6 +197,7 @@ def round_point_computation(point_info, round_info, active_nodes):
             else:
                 log.debug(f"Round {round_id}: Realtime error")
                 points = fail_points
+                raw_points = fail_points
         else:
             # Handle point multipliers
             # NOTE: Weirdness can result here from nodes going offline between eras. Should be reviewed.
@@ -199,6 +205,7 @@ def round_point_computation(point_info, round_info, active_nodes):
                            if node_multipliers.get(bytes(node_id))]
             multiplier = max(multipliers)
             points = success_points * multiplier
+            raw_points = success_points
 
         # Assign points to wallets
         for node_id in topology:
@@ -206,9 +213,10 @@ def round_point_computation(point_info, round_info, active_nodes):
             wallet = node_wallets.get(bytes(node_id))
             if wallet:
                 wallet_points[wallet] += points
+                raw_points[wallet] += raw_points
 
     log.debug(f"Wallet points: {wallet_points}")
-    return wallet_points
+    return wallet_points, raw_points
 
 
 #######################
