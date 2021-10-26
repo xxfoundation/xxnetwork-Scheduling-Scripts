@@ -26,6 +26,7 @@ THOUSAND = 1_000
 state_key = "consensus_points_timestamp"  # Static key used for states table
 positive_points_func = 'submit_cmix_points'
 negative_points_func = 'submit_cmix_deductions'
+raw_points_log = ''
 
 
 #################
@@ -143,7 +144,7 @@ def process_period(conn, substrate, keypair, point_info, start_period, end_perio
     if len(negative) > 0:
         push_point_info(substrate, negative_points_func, keypair, negative)
 
-    with open("/cmix/raw_points.log", "a") as f:
+    with open(raw_points_log, "a") as f:
         f.write(f"[{datetime.datetime.now()}] {raw_points}")
 
     # Save end_period timestamp to database to lock in the operation
@@ -395,12 +396,16 @@ def get_args():
     get_args controls the argparse usage for the script.  It sets up and parses
     arguments and returns them in dict format
     """
+    global raw_points_log
     parser = argparse.ArgumentParser(description="Options for point assignment script")
     parser.add_argument("--verbose", action="store_true",
                         help="Print debug logs", default=False)
     parser.add_argument("--log", type=str,
                         help="Path to output log information",
                         default="/tmp/points.log")
+    parser.add_argument("--raw-points-log", type=str,
+                        help="Path to output log information",
+                        default="/cmix/raw-points.log")
     parser.add_argument("--xxdot-url", type=str, help="xxdot url",
                         default="ws://localhost:9944")
     parser.add_argument("--xxdot-reg", type=str, help="xxdot registry file path",
@@ -428,6 +433,7 @@ def get_args():
                     level=log.DEBUG if args['verbose'] else log.INFO,
                     datefmt='%d-%b-%y %H:%M:%S',
                     filename=args["log"])
+    raw_points_log = args['raw_points_log']
     return args
 
 
