@@ -165,7 +165,7 @@ def round_point_computation(point_info, round_info, active_nodes):
     country_bins = point_info['countries']
 
     wallet_points = {}  # dictionary of wallet -> points to pass to push_point_info
-    raw_points = {} # Dict of raw points (without multipliers) to print to a log file
+    raw_points_dict = {} # Dict of raw points (without multipliers) to print to a log file
     node_multipliers = {}  # Dictionary containing point multipliers for each node
     node_wallets = {}  # Dictionary parsed from active nodes to more efficiently associate ID with Wallet ID
 
@@ -178,6 +178,7 @@ def round_point_computation(point_info, round_info, active_nodes):
         node_multipliers[node_id] = bin_multipliers[node_bin]  # Assign multiplier to node
         node_wallets[node_id] = wallet_address  # Add wallet association for node id
         wallet_points[wallet_address] = 0
+        raw_points_dict[wallet_address] = 0
 
     # Calculate point information for each round
     for row in round_info:
@@ -214,10 +215,10 @@ def round_point_computation(point_info, round_info, active_nodes):
             wallet = node_wallets.get(bytes(node_id))
             if wallet:
                 wallet_points[wallet] += points
-                raw_points[wallet] += raw_points
+                raw_points_dict[wallet] += raw_points
 
     log.debug(f"Wallet points: {wallet_points}")
-    return wallet_points, raw_points
+    return wallet_points, raw_points_dict
 
 
 #######################
