@@ -145,7 +145,7 @@ def process_period(conn, substrate, keypair, point_info, start_period, end_perio
         push_point_info(substrate, negative_points_func, keypair, negative)
 
     with open(raw_points_log, "a") as f:
-        f.write(f"[{datetime.datetime.now()}] {raw_points}")
+        f.write(f"[{datetime.datetime.now()}] {raw_points}\n")
 
     # Save end_period timestamp to database to lock in the operation
     update_last_checked_timestamp(conn, end_period)
