@@ -209,14 +209,15 @@ def round_point_computation(point_info, round_info, active_nodes):
 
             # Assign points to wallets
             for node_id in topology:
-                node_mult = (max_multiplier + node_multipliers[bytes(node_id)]) / 2
-                points = success_points * node_mult
+                if node_multipliers.get(bytes(node_id)):
+                    node_mult = (max_multiplier + node_multipliers[bytes(node_id)]) / 2
+                    points = success_points * node_mult
 
-                # NOTE: Weirdness can result here from nodes going offline between eras. Should be reviewed.
-                wallet = node_wallets.get(bytes(node_id))
-                if wallet:
-                    wallet_points[wallet] += points
-                    raw_points_dict[wallet] += success_points
+                    # NOTE: Weirdness can result here from nodes going offline between eras. Should be reviewed.
+                    wallet = node_wallets.get(bytes(node_id))
+                    if wallet:
+                        wallet_points[wallet] += points
+                        raw_points_dict[wallet] += success_points
 
     log.debug(f"Wallet points: {wallet_points}")
     return wallet_points, raw_points_dict
