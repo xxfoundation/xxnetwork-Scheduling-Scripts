@@ -150,8 +150,6 @@ def get_args():
                         default="/tmp/scheduling.log")
     # Constant Variables
     parser.add_argument("--xxdot-url", type=str, help="xxdot url", default="ws://localhost:9944")
-    parser.add_argument("--xxdot-reg", type=str, help="xxdot registry file path",
-                        default="xxdot_types.json")
 
     args = vars(parser.parse_args())
     log.basicConfig(format='[%(levelname)s] %(asctime)s: %(message)s',
@@ -200,15 +198,11 @@ def check_chain_connection():
 
 def get_substrate_provider():
     """
-    Get Substrate Provider listening on websocket of the Substrate Node configured with network registry from json file
+    Get Substrate Provider listening on websocket of the Substrate Node configured with network registry from server
     :return: Substrate Network Provider used to query blockchain
     """
     try:
-        return SubstrateInterface(
-            url=xxdot_url,
-            type_registry_preset='substrate-node-template',
-            type_registry=json_to_dict(xxdot_reg)
-        )
+        return SubstrateInterface(url=xxdot_url,)
     except ConnectionRefusedError:
         log.warning("No local Substrate node running.")
         return None
@@ -336,16 +330,6 @@ def poll_active_nodes(substrate):
         log.error("Failed to query disabled set")
         raise e
 
-    try:
-        active_era = substrate.query(
-            module='Staking',
-            storage_function='ActiveEra',
-            params=[]
-        )
-    except Exception as e:
-        log.error("Failed to query active era")
-        raise e
-
     # Bc we use pop to remove disabled, go backwards through this list. Otherwise, popping early index shifts later ones
     disabled_set.value.reverse()
     for val in disabled_set.value:
@@ -355,19 +339,22 @@ def poll_active_nodes(substrate):
             log.error(f"Invalid disabled set value {val} for validator set of {len(validator_set.value)}: {e}")
 
     ids_map = {}
-    era = active_era.value['index']
     for val in validator_set.value:
         try:
-            data = substrate.query(
-                module='Staking',
-                storage_function='ErasValidatorPrefs',
-                params=[era, val]
-            )
+            data = substrate.query("Staking", "Bonded", [val])
         except Exception as e:
-            log.error(f"Failed to query ErasValidatorPrefs: {era}, {val}")
+            log.error(f"Failed to query Staking Bonded: {val}")
             raise e
+        controller = data.value
 
-        cmix_id = data.value['cmix_root']
+        try:
+            data = substrate.query("Staking", "Ledger", [controller])
+        except Exception as e:
+            log.error(f"Failed to query Staking Ledger: {controller}")
+            raise e
+        ledger = data.value
+
+        cmix_id = ledger['cmix_id']
         cmix_id = bytes.fromhex(cmix_id[2:])  # convert string to bytes
 
         try:
