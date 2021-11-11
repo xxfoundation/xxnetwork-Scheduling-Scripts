@@ -411,8 +411,6 @@ def get_args():
                         default="/cmix/raw-points.log")
     parser.add_argument("--xxdot-url", type=str, help="xxdot url",
                         default="ws://localhost:9944")
-    parser.add_argument("--xxdot-reg", type=str, help="xxdot registry file path",
-                        default="xxdot_types.json")
     parser.add_argument("--wallet-path", type=str,
                         help="Wallet key path for pushing point info",
                         default="wallet.key")
@@ -502,15 +500,11 @@ def check_chain_connection():
 
 def get_substrate_provider():
     """
-    Get Substrate Provider listening on websocket of the Substrate Node configured with network registry from json file
+    Get Substrate Provider listening on websocket of the Substrate Node configured with network registry from server
     :return: Substrate Network Provider used to query blockchain
     """
     try:
-        return SubstrateInterface(
-            url=xxdot_url,
-            type_registry_preset='substrate-node-template',
-            type_registry=json_to_dict(xxdot_reg)
-        )
+        return SubstrateInterface(url=xxdot_url,)
     except ConnectionRefusedError:
         log.warning("No local Substrate node running.")
         return None
