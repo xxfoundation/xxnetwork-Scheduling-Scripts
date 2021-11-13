@@ -339,7 +339,7 @@ def poll_point_info(substrate):
     # Get Cmix Variables
     try:
         cmix_variables = substrate.query(
-            module='XXNetwork',
+            module='XXCmix',
             storage_function='CmixVariables',
             params=[]
         )
@@ -373,7 +373,7 @@ def push_point_info(substrate, call_function, keypair, wallet_points):
     log.debug(f"Attempting to submit {call_function} with points: {wallet_points}")
 
     call = substrate.compose_call(
-        call_module='XXNetwork',
+        call_module='XXCmix',
         call_function=call_function,
         call_params={"data": wallet_points}
     )

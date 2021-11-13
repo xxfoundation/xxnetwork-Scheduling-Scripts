@@ -258,7 +258,7 @@ def poll_cmix_info(substrate):
     # Get Cmix Variables
     try:
         cmix_variables = substrate.query(
-            module='XXNetwork',
+            module='XXCmix',
             storage_function='CmixVariables',
             params=[]
         )
