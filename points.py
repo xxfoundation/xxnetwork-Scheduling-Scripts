@@ -20,7 +20,6 @@ import time
 
 substrate_conn_freq = 10  # Frequency of attempting reconnects in seconds
 xxdot_url = ""
-xxdot_reg = ""
 ns_in_s = float(1e+9)  # Conversion from nanosecond to second
 THOUSAND = 1_000
 state_key = "consensus_points_timestamp"  # Static key used for states table
@@ -40,7 +39,6 @@ def main():
     args = get_args()
     log.info("Running with configuration: {}".format(args))
     xxdot_url = args['xxdot_url']
-    xxdot_reg = args['xxdot_reg']
     wallet_path = args['wallet_path']
     db_host = args['host']
     db_port = args['port']
