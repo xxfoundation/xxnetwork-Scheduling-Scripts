@@ -33,7 +33,7 @@ raw_points_log = ''
 #################
 
 def main():
-    global xxdot_url, xxdot_reg
+    global xxdot_url
 
     # Process input variables and program arguments
     args = get_args()

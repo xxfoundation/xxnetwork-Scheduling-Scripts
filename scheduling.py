@@ -23,7 +23,6 @@ from substrateinterface import SubstrateInterface
 polling_freq = 30  # seconds
 conn_freq = 10  # Frequency of attempting reconnects in seconds
 xxdot_url = ""
-xxdot_reg = ""
 blurb_prefix = 'Blurb'
 
 # Key mappings
@@ -39,7 +38,7 @@ ChainConf = namedtuple('ChainConf', 'timeouts_precomputation timeouts_realtime t
 #################
 
 def main():
-    global xxdot_url, xxdot_reg
+    global xxdot_url
 
     # Process input variables and program arguments
     args = get_args()
@@ -51,7 +50,6 @@ def main():
     db_user = args['user']
     db_pass = args['pass']
     xxdot_url = args['xxdot_url']
-    xxdot_reg = args['xxdot_reg']
 
     conn, auth_conn, substrate = None, None, None
     try:
