@@ -388,10 +388,10 @@ def poll_active_nodes(substrate):
             #  Loop through additional fields - currently, only blurb is here
             if "additional" in identity_info:
                 for i in identity_info["additional"]:
-                    field = i[1]
+                    field = get_raw(i, 0)
                     if field.startswith(blurb_prefix):
                         blurb = blurb + field[6:]
-                        blurb = blurb + i[0]
+                        blurb = blurb + get_raw(i, 1)
 
         identity = Identity(cmix_id=cmix_id, name=name, email=email, url=url, twitter=twitter, blurb=blurb)
         ids_map[val] = identity
