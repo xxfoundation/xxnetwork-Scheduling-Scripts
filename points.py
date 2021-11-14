@@ -21,6 +21,7 @@ import time
 substrate_conn_freq = 10  # Frequency of attempting reconnects in seconds
 xxdot_url = ""
 ns_in_s = float(1e+9)  # Conversion from nanosecond to second
+ms_in_ns = 1e+6
 THOUSAND = 1_000
 state_key = "consensus_points_timestamp"  # Static key used for states table
 positive_points_func = 'submit_cmix_points'
@@ -76,7 +77,7 @@ def main():
             try:
                 # Get up-to-date period information from blockchain
                 point_info = poll_point_info(substrate)
-                period = point_info['period'] * 1e+6
+                period = int(point_info['period'] * ms_in_ns)
 
                 # Wait until the next period arrives
                 next_period = last_checked_ts + period
