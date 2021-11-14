@@ -76,7 +76,7 @@ def main():
             try:
                 # Get up-to-date period information from blockchain
                 point_info = poll_point_info(substrate)
-                period = point_info['period']
+                period = point_info['period'] * 1e+6
 
                 # Wait until the next period arrives
                 next_period = last_checked_ts + period
@@ -187,8 +187,7 @@ def round_point_computation(point_info, round_info, active_nodes):
         round_err = row[5]
         topology = row[6]
 
-        points = 0
-        raw_points = 0
+        log.debug(f"Topology: {topology}, round_err: {round_err}")
         if round_err:
             # Determine negative points for failures
             round_id = row[0]
@@ -196,8 +195,12 @@ def round_point_computation(point_info, round_info, active_nodes):
                 log.debug(f"Round {round_id}: Precomp error")
             else:
                 log.debug(f"Round {round_id}: Realtime error")
-                points = fail_points
-                raw_points = fail_points
+                for node_id in topology:
+                    # NOTE: Weirdness can result here from nodes going offline between eras. Should be reviewed.
+                    wallet = node_wallets.get(bytes(node_id))
+                    if wallet:
+                        wallet_points[wallet] += fail_points
+                        raw_points_dict[wallet] += fail_points
         else:
             # Handle point multipliers
             # NOTE: Weirdness can result here from nodes going offline between eras. Should be reviewed.
@@ -207,8 +210,10 @@ def round_point_computation(point_info, round_info, active_nodes):
 
             # Assign points to wallets
             for node_id in topology:
-                if node_multipliers.get(bytes(node_id)):
-                    node_mult = (max_multiplier + node_multipliers[bytes(node_id)]) / 2
+                mult = node_multipliers.get(bytes(node_id))
+                if mult:
+                    node_mult = (max_multiplier + mult) / 2
+                    log.debug(f"node multiplier: {node_mult}")
                     points = success_points * node_mult
 
                     # NOTE: Weirdness can result here from nodes going offline between eras. Should be reviewed.
@@ -216,6 +221,10 @@ def round_point_computation(point_info, round_info, active_nodes):
                     if wallet:
                         wallet_points[wallet] += points
                         raw_points_dict[wallet] += success_points
+                    else:
+                        log.warning(f"no wallet found for nid {bytes(node_id)}")
+                else:
+                    log.warning(f"no mult found for nid {bytes(node_id)}")
 
     log.debug(f"Wallet points: {wallet_points}")
     return wallet_points, raw_points_dict
