@@ -11,6 +11,7 @@ import json
 import logging as log
 import psycopg2
 import sys
+import os
 from substrateinterface import SubstrateInterface, Keypair
 import time
 
@@ -40,7 +41,7 @@ def main():
     args = get_args()
     log.info("Running with configuration: {}".format(args))
     xxdot_url = args['xxdot_url']
-    wallet_path = args['wallet_path']
+    wallet_path = os.path.expanduser(args['wallet_path'])
     db_host = args['host']
     db_port = args['port']
     db_name = args['db']
