@@ -11,6 +11,7 @@ import json
 import logging as log
 import psycopg2
 import sys
+import os
 from substrateinterface import SubstrateInterface, Keypair
 import time
 
@@ -21,6 +22,7 @@ import time
 substrate_conn_freq = 10  # Frequency of attempting reconnects in seconds
 xxdot_url = ""
 ns_in_s = float(1e+9)  # Conversion from nanosecond to second
+ms_in_ns = 1e+6
 THOUSAND = 1_000
 state_key = "consensus_points_timestamp"  # Static key used for states table
 positive_points_func = 'submit_cmix_points'
@@ -39,7 +41,7 @@ def main():
     args = get_args()
     log.info("Running with configuration: {}".format(args))
     xxdot_url = args['xxdot_url']
-    wallet_path = args['wallet_path']
+    wallet_path = os.path.expanduser(args['wallet_path'])
     db_host = args['host']
     db_port = args['port']
     db_name = args['db']
@@ -76,7 +78,7 @@ def main():
             try:
                 # Get up-to-date period information from blockchain
                 point_info = poll_point_info(substrate)
-                period = point_info['period'] * 1e+6
+                period = int(point_info['period'] * ms_in_ns)
 
                 # Wait until the next period arrives
                 next_period = last_checked_ts + period
