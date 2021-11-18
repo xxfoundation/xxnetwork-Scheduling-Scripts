@@ -137,10 +137,14 @@ def process_period(conn, substrate, keypair, point_info, start_period, end_perio
             negative.append([key, abs(value)])
 
     # Push pointing to blockchain
-    if len(positive) > 0:
-        push_point_info(substrate, positive_points_func, keypair, positive)
-    if len(negative) > 0:
-        push_point_info(substrate, negative_points_func, keypair, negative)
+    try:
+        if len(positive) > 0:
+            push_point_info(substrate, positive_points_func, keypair, positive)
+        if len(negative) > 0:
+            push_point_info(substrate, negative_points_func, keypair, negative)
+    except Exception as e:
+        log.error(f"Failed to push point info: {e}")
+        raise e
 
     with open(raw_points_log, "a") as f:
         f.write(f"[{datetime.datetime.now()}] {raw_points}\n")
