@@ -12,7 +12,7 @@ import logging as log
 import psycopg2
 import sys
 import os
-from substrateinterface import SubstrateInterface, Keypair
+from substrateinterface import SubstrateInterface, Keypair, exceptions
 import time
 
 #############
@@ -391,6 +391,10 @@ def push_point_info(substrate, call_function, keypair, wallet_points):
     extrinsic = substrate.create_signed_extrinsic(call=call, keypair=keypair)
     try:
         receipt = substrate.submit_extrinsic(extrinsic, wait_for_inclusion=True)
+    except exceptions.SubstrateRequestException as e:
+        # Force a restart of the chain connection at the top level and retry
+        log.error(f"Failed to push_point_info: {e}")
+        raise ConnectionError("Invalid RPC request")
     except Exception as e:
         log.error(f"Failed to push_point_info: {extrinsic}")
         raise e
