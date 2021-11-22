@@ -319,22 +319,22 @@ def poll_active_nodes(substrate):
     try:
         validator_set = substrate.query("Session", "Validators")
     except Exception as e:
-        log.error("Failed to query validators")
+        log.error(f"Failed to query validators: {e}")
         raise e
 
     try:
-        disabled_set = substrate.query("Session", "DisabledValidators")
+        offending_set = substrate.query("Staking", "OffendingValidators")
     except Exception as e:
-        log.error("Failed to query disabled set")
+        log.error(f"Failed to query offending validators: {e}")
         raise e
 
     # Bc we use pop to remove disabled, go backwards through this list. Otherwise, popping early index shifts later ones
-    disabled_set.value.reverse()
-    for val in disabled_set.value:
+    offending_set.value.reverse()
+    for val in offending_set.value:
         try:
-            validator_set.value.pop(val)
+            validator_set.value.pop(val[0])
         except IndexError as e:
-            log.error(f"Invalid disabled set value {val} for validator set of {len(validator_set.value)}: {e}")
+            log.error(f"Invalid offending set value {val} for validator set of {len(validator_set.value)}: {e}")
 
     ids_map = {}
     for val in validator_set.value:
