@@ -323,7 +323,7 @@ def poll_active_nodes(substrate):
         raise e
 
     try:
-        offending_set = substrate.query("Staking", "OffendingValidatiors")
+        offending_set = substrate.query("Staking", "OffendingValidators")
     except Exception as e:
         log.error(f"Failed to query offending validators: {e}")
         raise e
