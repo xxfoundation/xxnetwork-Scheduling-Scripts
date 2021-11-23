@@ -80,26 +80,25 @@ def upload(src_path, dst_path, s3_bucket, region,
         log.error("Unable to upload {} to S3: {}".format(src_path, e))
 
 
-def cmp_hash(current_hash, file_name):
+def get_hash(file_path):
     """
+    Obtain the hash of the file at the given path
 
-    :param current_hash:
-    :param file_name:
-    :return:
+    :param file_path: Path of the file to hash
+    :return: Hash of the file
     """
     hasher = hashlib.md5()
-    with open(file_name, 'rb') as f:
+    with open(file_path, 'rb') as f:
         buf = f.read()
     hasher.update(buf)
-    new_hash = hasher.hexdigest()
-    log.debug(f"Current Hash: {current_hash}, New Hash: {new_hash}")
-    return current_hash == new_hash
+    return hasher.hexdigest()
 
 
 def main():
     args = get_args()
     log.info("Running with configuration: {}".format(args))
 
+    upload_frequency = 60
     s3_bucket_name = args["s3_bucket"]
     s3_access_key_id = args["s3_access_key"]
     s3_access_key_secret = args["s3_secret"]
@@ -107,13 +106,21 @@ def main():
     remote_path = args['remote_path']
     local_path = os.path.expanduser(args['local_path'])
 
-    upload_frequency = 60
+    # Wait for the file to exist
+    log.info(f"Waiting for {local_path}...")
+    while not os.path.exists(local_path):
+        time.sleep(upload_frequency)
+
     current_hash = ""
     while True:
-        if os.path.exists(local_path):
-            if cmp_hash(current_hash, local_path):
+        try:
+            new_hash = get_hash(local_path)
+            log.debug(f"Current Hash: {current_hash}, New Hash: {new_hash}")
+            if current_hash != new_hash:
                 upload(local_path, remote_path, s3_bucket_name,
                        s3_bucket_region, s3_access_key_id, s3_access_key_secret)
+        except Exception as e:
+            log.error(f"Unhandled exception occurred: {e}", exc_info=True)
         time.sleep(upload_frequency)
 
 
