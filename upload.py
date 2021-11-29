@@ -13,25 +13,25 @@ import hashlib
 
 def get_args():
     """
-    get_args controls the argparse usage for the script.  It sets up and parses
+    get_args controls the argparse usage for the script. It sets up and parses
     arguments and returns them in dict format
     """
-    parser = argparse.ArgumentParser(description="Options for point assignment script")
+    parser = argparse.ArgumentParser(description="Options for the upload script")
     parser.add_argument("--verbose", action="store_true",
                         help="Print debug logs", default=False)
-    parser.add_argument("--log", type=str,
+    parser.add_argument("--log", type=str, required=False,
                         help="Path to output log information",
                         default="/tmp/upload.log")
-    parser.add_argument("--s3-access-key", type=str, required=True,
-                        help="S3 access key")
-    parser.add_argument("--s3-secret", type=str, required=True,
-                        help="S3 access key secret")
     parser.add_argument("--s3-bucket", type=str, required=False,
                         help="S3 binary bucket name",
                         default="elixxir-bins")
     parser.add_argument("--s3-region", type=str, required=False,
                         help="S3 region",
                         default="us-west-1")
+    parser.add_argument("--s3-access-key", type=str, required=True,
+                        help="S3 access key")
+    parser.add_argument("--s3-secret", type=str, required=True,
+                        help="S3 access key secret")
     parser.add_argument("--local-path", type=str, required=True,
                         help="Path to file to upload")
     parser.add_argument("--remote-path", type=str, required=True,
