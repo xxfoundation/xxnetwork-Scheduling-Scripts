@@ -74,7 +74,7 @@ def upload(src_path, dst_path, s3_bucket, region,
             aws_secret_access_key=access_key_secret,
             region_name=region).resource("s3")
         s3.Bucket(s3_bucket).put_object(Key=dst_path, Body=upload_data.read())
-        log.debug("Successfully uploaded to {}/{} from {}".format(s3_bucket,
+        log.info("Successfully uploaded to {}/{} from {}".format(s3_bucket,
                                                                   dst_path,
                                                                   src_path))
     except Exception as e:
