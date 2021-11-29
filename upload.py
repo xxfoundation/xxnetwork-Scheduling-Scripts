@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 """
+Used for automatically uploading files to S3
 """
 
 import argparse
