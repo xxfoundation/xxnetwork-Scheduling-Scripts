@@ -679,11 +679,8 @@ def set_authorizer_nodes(conn, nids):
     # Insert Node information into authorizer db
     insert_command = "INSERT INTO nodes (id, ip_address, last_updated) VALUES" + \
                      (' (%s, %s, %s),' * len(insert_list))
-    insert_command = insert_command[:-1] + ";"
-    truncate_command = "TRUNCATE nodes;"
+    insert_command = insert_command[:-1] + " ON CONFLICT DO NOTHING;"
     try:
-        cur.execute(truncate_command)
-        log.debug(cur.query)
         cur.execute(insert_command, [e for l in insert_list for e in l])
         log.debug(cur.query)
         conn.commit()
