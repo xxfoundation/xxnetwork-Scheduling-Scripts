@@ -5,6 +5,7 @@ Monitors substrate for Node and Network parameter information,
 inserts Node information into authorizer DB,
 and inserts Node information and Network parameters into Permissioning DB
 """
+import subprocess
 from collections import namedtuple
 import copy
 import json
@@ -66,9 +67,13 @@ def main():
             table_exists = check_table(conn, "active_nodes")
 
         # Main loop
-        active_dict = {}
+        active_dict = dict()
+        auth_nids = set()
         current_bins = []
         current_chain_conf = {}
+        init_auth = get_authorizer_nodes()
+        for i in init_auth:
+            auth_nids.add(i[0])
         while True:
             try:
                 log.info("Polling substrate...")
@@ -94,8 +99,13 @@ def main():
                     log.info(f"Updating active nodes: {len(new_dict)} nodes")
 
                     # Extract node IDs for authorizer (cmix_id with node type byte added)
-                    authorizer_nids = [i.cmix_id + b'\x02' for i in new_dict.values()]
-                    set_authorizer_nodes(auth_conn, authorizer_nids)
+                    new_auth_nids = [i.cmix_id + b'\x02' for i in new_dict.values()]
+                    new_auth_set = set(new_auth_nids)
+                    to_add = new_auth_set.difference(auth_nids)
+                    to_delete = auth_nids.difference(new_auth_set)
+                    set_authorizer_nodes(auth_conn, to_add, to_delete)
+                    # TODO: remove auth for to_delete
+                    auth_nids = new_auth_nids
 
                     # Pass a copy because the dict will be mutated
                     set_active_nodes(conn, copy.deepcopy(new_dict))
@@ -212,6 +222,16 @@ def get_substrate_provider():
 #######################
 # Auxiliary Functions #
 #######################
+
+def revoke_auth(to_revoke):
+    for nid in to_revoke:
+        cmd = f"sudo nft -a list chain inet filter input | grep '{nid}' | awk -F'handle ' '{{print $2}}' | xargs -Ixxx sudo nft delete rule inet filter input handle xxx"
+        p = subprocess.Popen(cmd.split())
+        output, error = p.communicate()
+        log.debug(output)
+        if error:
+            log.error(error)
+
 
 def id_to_reg_code(cmix_id):
     """
@@ -648,13 +668,8 @@ def get_max_app_id(conn):
     return int(row[0]) if row and row[0] else 0
 
 
-def set_authorizer_nodes(conn, nids):
-    """
-    Set nodes in the authorizer db
-    :param conn: database connection object
-    :param nids: list of node IDs for authorizer
-    :return:
-    """
+def get_authorizer_nodes(conn):
+    """"""
     cur = conn.cursor()
 
     # Get Node information from nodes table
@@ -667,15 +682,32 @@ def set_authorizer_nodes(conn, nids):
         cur.close()
         raise e
 
-    # Convert Node information into authorizer insert command
-    node_list = cur.fetchall()
-    insert_list = []
-    for n in node_list:
-        if bytes(n[0]) in nids:
-            insert_list = insert_list + [n]
-            nids.remove(bytes(n[0]))
-    insert_list = insert_list + [(i, None, None) for i in nids]
+    return cur.fetchall()
 
+
+def set_authorizer_nodes(conn, to_add, to_delete):
+    """
+    Set nodes in the authorizer db
+    :param conn: database connection object
+    :param to_add: list of node IDs to add
+    :param to_delete: list of node IDs to delete
+    :return:
+    """
+    cur = conn.cursor()
+
+    # Convert Node information into authorizer insert command
+    node_list = get_authorizer_nodes(conn)
+
+    delete_command = "DELETE FROM nodes WHERE id = ?;"
+    for n in to_delete:
+        try:
+            cur.execute(delete_command, (n,))
+            log.debug(cur.query)
+        except Exception as e:
+            log.error(f"Failed to remove node from authorizer DB: {cur.query}")
+            raise e
+
+    insert_list = [(i, None, None) for i in to_add]
     # Insert Node information into authorizer db
     insert_command = "INSERT INTO nodes (id, ip_address, last_updated) VALUES" + \
                      (' (%s, %s, %s),' * len(insert_list))
