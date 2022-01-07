@@ -104,8 +104,8 @@ def main():
                     to_add = new_auth_set.difference(auth_nids)
                     to_delete = auth_nids.difference(new_auth_set)
                     set_authorizer_nodes(auth_conn, to_add, to_delete)
-                    # TODO: remove auth for to_delete
                     auth_nids = new_auth_nids
+                    revoke_auth(to_delete)
 
                     # Pass a copy because the dict will be mutated
                     set_active_nodes(conn, copy.deepcopy(new_dict))
@@ -224,6 +224,10 @@ def get_substrate_provider():
 #######################
 
 def revoke_auth(to_revoke):
+    """
+    revoke_auth accepts a list of node IDs to revoke auth from
+    :param to_revoke: list of node IDs
+    """
     for nid in to_revoke:
         cmd = f"sudo nft -a list chain inet filter input | grep '{nid}' | awk -F'handle ' '{{print $2}}' | xargs -Ixxx sudo nft delete rule inet filter input handle xxx"
         p = subprocess.Popen(cmd.split())
@@ -425,7 +429,7 @@ def poll_active_nodes(substrate):
 
 def update_config_options(conn, chain_conf):
     """
-
+    update config based on chain data
     :param conn:
     :param ChainConf chain_conf:
     :return:
@@ -669,7 +673,11 @@ def get_max_app_id(conn):
 
 
 def get_authorizer_nodes(conn):
-    """"""
+    """
+    get list of nodes currently in the authorizer nodes table
+    :param conn: authorizer database connection
+    :return: list of rows containing id, ip_address, last_updated
+    """
     cur = conn.cursor()
 
     # Get Node information from nodes table
