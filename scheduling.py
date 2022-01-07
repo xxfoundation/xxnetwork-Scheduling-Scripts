@@ -71,7 +71,7 @@ def main():
         auth_nids = set()
         current_bins = []
         current_chain_conf = {}
-        init_auth = get_authorizer_nodes()
+        init_auth = get_authorizer_nodes(auth_conn)
         for i in init_auth:
             auth_nids.add(i[0])
         while True:
@@ -103,9 +103,9 @@ def main():
                     new_auth_set = set(new_auth_nids)
                     to_add = new_auth_set.difference(auth_nids)
                     to_delete = auth_nids.difference(new_auth_set)
-                    set_authorizer_nodes(auth_conn, to_add, to_delete)
-                    auth_nids = new_auth_nids
-                    revoke_auth(to_delete)
+                    to_revoke = set_authorizer_nodes(auth_conn, to_add, to_delete)
+                    auth_nids = new_auth_set
+                    revoke_auth(to_revoke)
 
                     # Pass a copy because the dict will be mutated
                     set_active_nodes(conn, copy.deepcopy(new_dict))
@@ -699,21 +699,24 @@ def set_authorizer_nodes(conn, to_add, to_delete):
     :param conn: database connection object
     :param to_add: list of node IDs to add
     :param to_delete: list of node IDs to delete
-    :return:
+    :return list[ip_address]: list of IPs to revoke auth
     """
     cur = conn.cursor()
 
     # Convert Node information into authorizer insert command
     node_list = get_authorizer_nodes(conn)
+    to_revoke = []
 
     delete_command = "DELETE FROM nodes WHERE id = ?;"
-    for n in to_delete:
-        try:
-            cur.execute(delete_command, (n,))
-            log.debug(cur.query)
-        except Exception as e:
-            log.error(f"Failed to remove node from authorizer DB: {cur.query}")
-            raise e
+    for row in node_list:
+        if row[0] in to_delete:
+            try:
+                cur.execute(delete_command, (row[0],))
+                log.debug(cur.query)
+            except Exception as e:
+                log.error(f"Failed to remove node from authorizer DB: {cur.query}")
+                raise e
+        to_revoke.append(row[1])
 
     insert_list = [(i, None, None) for i in to_add]
     # Insert Node information into authorizer db
@@ -729,6 +732,7 @@ def set_authorizer_nodes(conn, to_add, to_delete):
         raise e
     finally:
         cur.close()
+    return to_revoke
 
 
 def check_table(conn, table_name):
