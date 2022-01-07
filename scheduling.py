@@ -225,8 +225,8 @@ def get_substrate_provider():
 
 def revoke_auth(to_revoke):
     """
-    revoke_auth accepts a list of node IDs to revoke auth from
-    :param to_revoke: list of node IDs
+    revoke_auth accepts a list of node IP addresses to revoke auth from
+    :param to_revoke: list of node IP addresses
     """
     for nid in to_revoke:
         cmd = f"sudo nft -a list chain inet filter input | grep '{nid}' | awk -F'handle ' '{{print $2}}' | xargs -Ixxx sudo nft delete rule inet filter input handle xxx"
