@@ -231,7 +231,7 @@ def revoke_auth(to_revoke):
     log.info(f"Revoking access to {len(to_revoke)} nodes...")
     for node_ip in to_revoke:
         cmd = f"sudo nft -a list chain inet filter input | grep '{node_ip}' | awk -F'handle ' '{{print $2}}' | xargs -Ixxx sudo nft delete rule inet filter input handle xxx"
-        log.debug(cmd)
+        log.info(f"Running revoke command: {cmd}")
         p = subprocess.Popen(cmd.split())
         output, error = p.communicate()
         if output:
