@@ -229,9 +229,9 @@ def revoke_auth(to_revoke):
     :param to_revoke: list of node IP addresses
     """
     log.info(f"Revoking access to {len(to_revoke)} nodes...")
-    for nid in to_revoke:
-        cmd = f"sudo nft -a list chain inet filter input | grep '{nid}' | awk -F'handle ' '{{print $2}}' | xargs -Ixxx sudo nft delete rule inet filter input handle xxx"
-        log.debug(cmd)
+    for node_ip in to_revoke:
+        cmd = f"sudo nft -a list chain inet filter input | grep '{node_ip}' | awk -F'handle ' '{{print $2}}' | xargs -Ixxx sudo nft delete rule inet filter input handle xxx"
+        log.info(f"Running revoke command: {cmd}")
         p = subprocess.Popen(cmd.split())
         output, error = p.communicate()
         if output:
