@@ -228,13 +228,16 @@ def revoke_auth(to_revoke):
     revoke_auth accepts a list of node IP addresses to revoke auth from
     :param to_revoke: list of node IP addresses
     """
+    log.info(f"Revoking access to {len(to_revoke)} nodes...")
     for nid in to_revoke:
         cmd = f"sudo nft -a list chain inet filter input | grep '{nid}' | awk -F'handle ' '{{print $2}}' | xargs -Ixxx sudo nft delete rule inet filter input handle xxx"
+        log.debug(cmd)
         p = subprocess.Popen(cmd.split())
         output, error = p.communicate()
-        log.debug(output)
+        if output:
+            log.debug(output)
         if error:
-            log.error(error)
+            raise IOError(error)
 
 
 def id_to_reg_code(cmix_id):
@@ -707,7 +710,7 @@ def set_authorizer_nodes(conn, to_add, to_delete):
     node_list = get_authorizer_nodes(conn)
     to_revoke = []
 
-    delete_command = "DELETE FROM nodes WHERE id = ?;"
+    delete_command = "DELETE FROM nodes WHERE id = %s;"
     for row in node_list:
         if row[0] in to_delete:
             try:
