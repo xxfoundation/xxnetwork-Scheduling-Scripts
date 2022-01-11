@@ -719,7 +719,8 @@ def set_authorizer_nodes(conn, to_add, to_delete):
             except Exception as e:
                 log.error(f"Failed to remove node from authorizer DB: {cur.query}")
                 raise e
-            to_revoke.append(row[1])
+            if row[1]:
+                to_revoke.append(row[1])
 
     insert_list = [(i, None, None) for i in to_add]
     # Insert Node information into authorizer db
