@@ -73,7 +73,7 @@ def main():
         current_chain_conf = {}
         init_auth = get_authorizer_nodes(auth_conn)
         for i in init_auth:
-            auth_nids.add(i[0])
+            auth_nids.add(bytes(i[0]))
         while True:
             try:
                 log.info("Polling substrate...")
@@ -110,7 +110,7 @@ def main():
                     # Pass a copy because the dict will be mutated
                     set_active_nodes(conn, copy.deepcopy(new_dict))
 
-                    # Update the new dictionary of active nodes
+                    #
                     active_dict = new_dict
 
                 time.sleep(polling_freq)
@@ -712,7 +712,7 @@ def set_authorizer_nodes(conn, to_add, to_delete):
 
     delete_command = "DELETE FROM nodes WHERE id = %s;"
     for row in node_list:
-        if row[0] in to_delete:
+        if bytes(row[0]) in to_delete:
             try:
                 cur.execute(delete_command, (row[0],))
                 log.debug(cur.query)
@@ -722,20 +722,22 @@ def set_authorizer_nodes(conn, to_add, to_delete):
             if row[1]:
                 to_revoke.append(row[1])
 
-    insert_list = [(i, None, None) for i in to_add]
-    # Insert Node information into authorizer db
-    insert_command = "INSERT INTO nodes (id, ip_address, last_updated) VALUES" + \
-                     (' (%s, %s, %s),' * len(insert_list))
-    insert_command = insert_command[:-1] + " ON CONFLICT DO NOTHING;"
-    try:
-        cur.execute(insert_command, [e for l in insert_list for e in l])
-        log.debug(cur.query)
-        conn.commit()
-    except Exception as e:
-        log.error(f"Failed to insert into authorizer db: {cur.query}")
-        raise e
-    finally:
-        cur.close()
+    if len(to_add) > 0:
+        insert_list = [(i, None, None) for i in to_add]
+        # Insert Node information into authorizer db
+        insert_command = "INSERT INTO nodes (id, ip_address, last_updated) VALUES" + \
+                (' (%s, %s, %s),' * len(insert_list))
+        insert_command = insert_command[:-1] + " ON CONFLICT DO NOTHING;"
+        try:
+            cur.execute(insert_command, [e for l in insert_list for e in l])
+            log.debug(cur.query)
+            conn.commit()
+        except Exception as e:
+            log.error(f"Failed to insert into authorizer db: {cur.query}")
+            raise e
+        finally:
+            cur.close()
+
     return to_revoke
 
 
