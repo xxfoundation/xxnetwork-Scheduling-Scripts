@@ -80,7 +80,7 @@ def main():
 
                 # Deal with bins
                 bins, chain_conf = poll_cmix_info(substrate)
-                log.debug(f"Polled bins: {bins}")
+                log.debug(f"Polled {len(bins)} bins!")
                 if bins != current_bins:
                     log.info(f"Updating GeoBins: {bins}")
                     set_bins(conn, bins)
@@ -94,7 +94,7 @@ def main():
 
                 # Deal with active nodes
                 new_dict = poll_active_nodes(substrate)
-                log.debug(f"Polled active nodes: {new_dict}")
+                log.debug(f"Polled {len(new_dict)} active nodes!")
                 if active_dict != new_dict:
                     log.info(f"Updating active nodes: {len(new_dict)} nodes")
 
