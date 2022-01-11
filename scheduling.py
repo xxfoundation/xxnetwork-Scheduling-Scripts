@@ -232,12 +232,10 @@ def revoke_auth(to_revoke):
     for node_ip in to_revoke:
         cmd = f"sudo nft -a list chain inet filter input | grep '{node_ip}' | awk -F'handle ' '{{print $2}}' | xargs -Ixxx sudo nft delete rule inet filter input handle xxx"
         log.info(f"Running revoke command: {cmd}")
-        p = subprocess.Popen(cmd.split())
-        output, error = p.communicate()
-        if output:
-            log.debug(output)
-        if error:
-            raise IOError(error)
+        p = subprocess.Popen(['/bin/bash', '-c', cmd])
+        p.wait(5)
+        if p.returncode != 0:
+            raise OSError(f"Revoke command exited with return code {p.returncode}")
 
 
 def id_to_reg_code(cmix_id):
