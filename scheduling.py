@@ -110,7 +110,7 @@ def main():
                     # Pass a copy because the dict will be mutated
                     set_active_nodes(conn, copy.deepcopy(new_dict))
 
-                    #
+                    # Update the new dictionary of active nodes
                     active_dict = new_dict
 
                 time.sleep(polling_freq)
