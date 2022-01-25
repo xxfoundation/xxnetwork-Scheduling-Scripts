@@ -732,10 +732,9 @@ def set_authorizer_nodes(conn, to_add, to_delete):
         except Exception as e:
             log.error(f"Failed to insert into authorizer db: {cur.query}")
             raise e
-        finally:
-            cur.close()
 
     conn.commit()
+    cur.close()
     return to_revoke
 
 
