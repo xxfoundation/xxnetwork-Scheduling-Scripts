@@ -716,6 +716,7 @@ def set_authorizer_nodes(conn, to_add, to_delete):
                 log.debug(cur.query)
             except Exception as e:
                 log.error(f"Failed to remove node from authorizer DB: {cur.query}")
+                cur.close()
                 raise e
             if row[1]:
                 to_revoke.append(row[1])
@@ -724,13 +725,14 @@ def set_authorizer_nodes(conn, to_add, to_delete):
         insert_list = [(i, None, None) for i in to_add]
         # Insert Node information into authorizer db
         insert_command = "INSERT INTO nodes (id, ip_address, last_updated) VALUES" + \
-                (' (%s, %s, %s),' * len(insert_list))
+            (' (%s, %s, %s),' * len(insert_list))
         insert_command = insert_command[:-1] + " ON CONFLICT DO NOTHING;"
         try:
             cur.execute(insert_command, [e for l in insert_list for e in l])
             log.debug(cur.query)
         except Exception as e:
             log.error(f"Failed to insert into authorizer db: {cur.query}")
+            cur.close()
             raise e
 
     conn.commit()
