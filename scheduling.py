@@ -707,13 +707,12 @@ def set_authorizer_nodes(conn, to_add, to_delete):
 
     # Convert Node information into authorizer insert command
     node_list = get_authorizer_nodes(conn)
-    log.info(f"Current authorizer nodes: {node_list}")  # TODO: remove me
     to_revoke = []
 
     delete_command = "DELETE FROM nodes WHERE id = %s;"
     for row in node_list:
         if bytes(row[0]) in to_delete:
-            log.info(f"Deleting {row[0]} [{row[1]}] - last updated in DB at {row[2]}")  # TODO: remove me
+            log.info(f"Deleting {bytes(row[0])} [{row[1]}] - last updated in DB at {row[2]}")  # TODO: remove me
             try:
                 cur.execute(delete_command, (row[0],))
                 log.debug(cur.query)
