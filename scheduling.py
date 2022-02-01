@@ -707,6 +707,7 @@ def set_authorizer_nodes(conn, to_add, to_delete):
 
     # Convert Node information into authorizer insert command
     node_list = get_authorizer_nodes(conn)
+    log.info(f"Current authorizer nodes: {node_list}")  # TODO: remove me
     to_revoke = []
 
     delete_command = "DELETE FROM nodes WHERE id = %s;"
