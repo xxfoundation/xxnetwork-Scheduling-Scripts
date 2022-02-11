@@ -104,7 +104,7 @@ def main():
                     to_add = new_auth_set.difference(auth_nids)
                     to_delete = auth_nids.difference(new_auth_set)
                     to_revoke = set_authorizer_nodes(auth_conn, to_add, to_delete)
-                    log.info(f"To revoke: {to_revoke}")  # TODO: remove me
+                    log.info(f"To revoke: {to_revoke}")
                     auth_nids = new_auth_set
                     revoke_auth(to_revoke)
 
@@ -712,7 +712,7 @@ def set_authorizer_nodes(conn, to_add, to_delete):
     delete_command = "DELETE FROM nodes WHERE id = %s;"
     for row in node_list:
         if bytes(row[0]) in to_delete:
-            log.info(f"Deleting {bytes(row[0])} [{row[1]}] - last updated in DB at {row[2]}")  # TODO: remove me
+            log.info(f"Deleting {bytes(row[0])} [{row[1]}] - last updated in DB at {row[2]}")
             try:
                 cur.execute(delete_command, (row[0],))
                 log.debug(cur.query)
