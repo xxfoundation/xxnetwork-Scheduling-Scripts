@@ -481,6 +481,12 @@ def parse_bins(countries_list):
 
 
 def update_wallet_country_list(active_nodes, list_path):
+    """
+    Check active nodes for items not in the current list of wallets & add if necessary
+    :param active_nodes:
+    :param list_path:
+    :return:
+    """
     global wallet_list
     with open(list_path, "a+") as f:
         if not wallet_list:
