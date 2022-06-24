@@ -168,19 +168,17 @@ def round_point_computation(point_info, round_info, active_nodes):
     raw_points_dict = {} # Dict of raw points (without multipliers) to print to a log file
     node_multipliers = {}  # Dictionary containing point multipliers for each node
     node_wallets = {}  # Dictionary parsed from active nodes to more efficiently associate ID with Wallet ID
-    node_countries = {}
 
     # Parse active nodes into dictionaries
     for row in active_nodes:
         wallet_address = row[0]
         node_id = bytes(row[1])
         node_country = row[2]  # Database query for country by node id
-        node_countries[node_id] = node_country
         node_bin = country_bins[node_country]  # Get bin associated with country
         node_multipliers[node_id] = bin_multipliers[node_bin]  # Assign multiplier to node
         node_wallets[node_id] = wallet_address  # Add wallet association for node id
         wallet_points[wallet_address] = 0
-        raw_points_dict[wallet_address] = 0
+        raw_points_dict[wallet_address] = [0, node_country]
 
     # Calculate point information for each round
     for row in round_info:
@@ -204,7 +202,7 @@ def round_point_computation(point_info, round_info, active_nodes):
                     wallet = node_wallets.get(bytes(node_id))
                     if wallet:
                         wallet_points[wallet] += fail_points
-                        raw_points_dict[wallet] += fail_points
+                        raw_points_dict[wallet][0] += fail_points
         else:
             # Handle point multipliers
             # NOTE: Weirdness can result here from nodes going offline between eras. Should be reviewed.
@@ -224,7 +222,7 @@ def round_point_computation(point_info, round_info, active_nodes):
                     wallet = node_wallets.get(bytes(node_id))
                     if wallet:
                         wallet_points[wallet] += points
-                        raw_points_dict[f"{wallet},{node_countries[bytes(node_id)]}"] += success_points
+                        raw_points_dict[wallet][0] += success_points
                     else:
                         log.warning(f"no wallet found for nid {bytes(node_id)}")
                 else:
