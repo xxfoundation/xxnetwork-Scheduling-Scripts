@@ -37,6 +37,12 @@ def get_args():
                         help="Path to file to upload")
     parser.add_argument("--remote-path", type=str, required=True,
                         help="Remote location to place the file")
+    parser.add_argument("--upload-frequency", type=int, required=False,
+                        help="Frequency of file uploads (in seconds)",
+                        default=60)
+    parser.add_argument("--truncate-size", type=int, required=False,
+                        help="Maximum size of file before it is truncated (in MB)",
+                        default=0)
 
     args = vars(parser.parse_args())
     log.basicConfig(format='[%(levelname)s] %(asctime)s: %(message)s',
@@ -75,8 +81,8 @@ def upload(src_path, dst_path, s3_bucket, region,
             region_name=region).resource("s3")
         s3.Bucket(s3_bucket).put_object(Key=dst_path, Body=upload_data.read())
         log.info("Successfully uploaded to {}/{} from {}".format(s3_bucket,
-                                                                  dst_path,
-                                                                  src_path))
+                                                                 dst_path,
+                                                                 src_path))
     except Exception as e:
         log.error("Unable to upload {} to S3: {}".format(src_path, e))
 
@@ -99,7 +105,11 @@ def main():
     args = get_args()
     log.info("Running with configuration: {}".format(args))
 
-    upload_frequency = 60
+    # Size of one megabyte in bytes
+    MEGABYTE = 1048576
+
+    upload_frequency = args["upload_frequency"]
+    truncate_size = args["truncate_size"] * MEGABYTE
     s3_bucket_name = args["s3_bucket"]
     s3_access_key_id = args["s3_access_key"]
     s3_access_key_secret = args["s3_secret"]
@@ -112,14 +122,34 @@ def main():
     while not os.path.exists(local_path):
         time.sleep(upload_frequency)
 
+    # Determine whether file truncation should be performed
+    is_truncate_enabled = truncate_size != 0
+    log.info(f"Beginning file upload every {upload_frequency} seconds. Truncation is set to {is_truncate_enabled}")
+
+    # Keep track of the current file hash
     current_hash = ""
+    # Keep track of a unique file timestamp if truncation is enabled
+    file_timestamp = f"-{int(time.time())}" if is_truncate_enabled else ""
     while True:
         try:
             new_hash = get_hash(local_path)
             log.debug(f"Current Hash: {current_hash}, New Hash: {new_hash}")
+            # If file has changed, upload the new file
             if current_hash != new_hash:
-                upload(local_path, remote_path, s3_bucket_name,
+                upload(local_path, f"{remote_path}{file_timestamp}", s3_bucket_name,
                        s3_bucket_region, s3_access_key_id, s3_access_key_secret)
+
+            if is_truncate_enabled:
+                # Check if the log file is too large
+                file_size = os.path.getsize(local_path)
+                log.debug(f"Current File Size: {file_size}")
+
+                if file_size > truncate_size:
+                    # Truncate the file
+                    log.info("File has reached maximum size. Clearing...")
+                    with open(local_path, "w+"):
+                        log.info(f"File has been truncated. New Size: {os.path.getsize(local_path)}")
+                    file_timestamp = f"-{int(time.time())}"
         except Exception as e:
             log.error(f"Unhandled exception occurred: {e}", exc_info=True)
         time.sleep(upload_frequency)
