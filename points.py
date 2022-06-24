@@ -28,8 +28,6 @@ state_key = "consensus_points_timestamp"  # Static key used for states table
 positive_points_func = 'submit_cmix_points'
 negative_points_func = 'submit_cmix_deductions'
 raw_points_log = ''
-wallet_list_path = ''
-wallet_list = None
 
 
 #################
@@ -416,7 +414,7 @@ def get_args():
     get_args controls the argparse usage for the script.  It sets up and parses
     arguments and returns them in dict format
     """
-    global raw_points_log, wallet_list_path
+    global raw_points_log
     parser = argparse.ArgumentParser(description="Options for point assignment script")
     parser.add_argument("--verbose", action="store_true",
                         help="Print debug logs", default=False)
@@ -445,7 +443,6 @@ def get_args():
                         default="cmix")
     parser.add_argument("--pass", type=str,
                         help="DB password")
-    parser.add_argument("--wallet-list-path", type=str, help="List of wallet-country")
 
     args = vars(parser.parse_args())
     log.basicConfig(format='[%(levelname)s] %(asctime)s: %(message)s',
@@ -453,7 +450,6 @@ def get_args():
                     datefmt='%d-%b-%y %H:%M:%S',
                     filename=args["log"])
     raw_points_log = args['raw_points_log']
-    wallet_list_path = args['wallet_list_path']
     return args
 
 
@@ -478,27 +474,6 @@ def parse_bins(countries_list):
         country = bytes.fromhex(elem[0][2:]).decode('utf-8')
         ret[country] = (elem[1])
     return ret
-
-
-def update_wallet_country_list(active_nodes, list_path):
-    """
-    Check active nodes for items not in the current list of wallets & add if necessary
-    :param active_nodes:
-    :param list_path:
-    :return:
-    """
-    global wallet_list
-    with open(list_path, "a+") as f:
-        if not wallet_list:
-            wallet_list = {}
-            lines = f.readlines()
-            for line in lines:
-                parts = line.split(",")
-                wallet_list[parts[0]] = wallet_list[parts[1]]
-        for line in active_nodes:
-            if line[0] not in wallet_list:
-                wallet_list[line[0]] = line[2]
-                f.write(f"{line[0]},{line[2]}\n")
 
 
 ########################
