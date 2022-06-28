@@ -35,7 +35,7 @@ raw_points_log = ''
 #################
 
 def main():
-    global xxdot_url
+    global xxdot_url, raw_points_log
 
     # Process input variables and program arguments
     args = get_args()
@@ -47,6 +47,7 @@ def main():
     db_name = args['db']
     db_user = args['user']
     db_pass = args['pass']
+    raw_points_log = args['raw_points_log']
 
     # Read Mnemonic from file and create keypair
     with open(wallet_path) as file:
@@ -178,7 +179,7 @@ def round_point_computation(point_info, round_info, active_nodes):
         node_multipliers[node_id] = bin_multipliers[node_bin]  # Assign multiplier to node
         node_wallets[node_id] = wallet_address  # Add wallet association for node id
         wallet_points[wallet_address] = 0
-        raw_points_dict[wallet_address] = 0
+        raw_points_dict[wallet_address] = [0, node_country]
 
     # Calculate point information for each round
     for row in round_info:
@@ -202,7 +203,7 @@ def round_point_computation(point_info, round_info, active_nodes):
                     wallet = node_wallets.get(bytes(node_id))
                     if wallet:
                         wallet_points[wallet] += fail_points
-                        raw_points_dict[wallet] += fail_points
+                        raw_points_dict[wallet][0] += fail_points
         else:
             # Handle point multipliers
             # NOTE: Weirdness can result here from nodes going offline between eras. Should be reviewed.
@@ -222,7 +223,7 @@ def round_point_computation(point_info, round_info, active_nodes):
                     wallet = node_wallets.get(bytes(node_id))
                     if wallet:
                         wallet_points[wallet] += points
-                        raw_points_dict[wallet] += success_points
+                        raw_points_dict[wallet][0] += success_points
                     else:
                         log.warning(f"no wallet found for nid {bytes(node_id)}")
                 else:
@@ -412,7 +413,6 @@ def get_args():
     get_args controls the argparse usage for the script.  It sets up and parses
     arguments and returns them in dict format
     """
-    global raw_points_log
     parser = argparse.ArgumentParser(description="Options for point assignment script")
     parser.add_argument("--verbose", action="store_true",
                         help="Print debug logs", default=False)
@@ -447,7 +447,6 @@ def get_args():
                     level=log.DEBUG if args['verbose'] else log.INFO,
                     datefmt='%d-%b-%y %H:%M:%S',
                     filename=args["log"])
-    raw_points_log = args['raw_points_log']
     return args
 
 
